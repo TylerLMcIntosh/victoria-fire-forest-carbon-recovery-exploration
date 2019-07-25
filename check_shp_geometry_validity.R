@@ -12,6 +12,8 @@
 #
 # ^ Uploading the .shp to GEE yields an "Asset Ingestion" error due to
 # feature "null". 
+#
+# Tidying feature geometries: https://www.r-spatial.org/r/2017/03/19/invalid.html 
 
 library(sf)
 library(tibble) 
@@ -35,3 +37,6 @@ print(sma_co_is_valid[sma_co_is_valid != "Valid Geometry"])
 
 # make invalid polygons valid, or remove them? 
 sma_co_valid <- lwgeom::st_make_valid(sma_co)
+
+# write the valid geometries to .shp
+sf::st_write(sma_co_valid, dsn = "data/blm_co_sma_20190520_valid.shp")
