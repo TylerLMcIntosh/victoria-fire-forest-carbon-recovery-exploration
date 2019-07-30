@@ -19,11 +19,10 @@ library(sf)
 library(tibble) 
 library(lwgeom)
 
-# set working directory
-setwd("~/github/fire-forest-carbon-recovery/")
+
 
 # read the SMA polygons for Colorado 
-sma_co <- sf::st_read("data/BLM_CO_SMA_SHP/BLM_CO_SMA_20190520.shp")
+sma_co <- sf::st_read("data/data_raw/BLM_CO_SMA_SHP/BLM_CO_SMA_20190520.shp")
 
 # take a look at the attributes and number of observations
 tibble::glimpse(sma_co)
@@ -39,4 +38,4 @@ print(sma_co_is_valid[sma_co_is_valid != "Valid Geometry"])
 sma_co_valid <- lwgeom::st_make_valid(sma_co)
 
 # write the valid geometries to .shp
-sf::st_write(sma_co_valid, dsn = "data/blm_co_sma_20190520_valid.shp")
+sf::st_write(sma_co_valid, dsn = "data/data_output/blm_co_sma_20190520_valid.shp")
