@@ -1,5 +1,5 @@
-# Script to check the validity of polygon geometries and prepare them
-# as valid shapefiles.
+# This script checks the validity of spatial geometries, fixes any invalid 
+# entries, and writes a shapefile containing valid spatial geometries. 
 #
 # Need to upload BLM Surface Management Agency (SMA) polygons in shapefile
 # format to the Google Earth Engine (GEE) project.
@@ -18,24 +18,31 @@
 library(sf)
 library(tibble) 
 library(lwgeom)
+library(here)
 
+# define input and output filenames 
+geom_in_filename <- (here::here("data/data_raw/BLM_National_Surface_Management_Agency/sma_wm.gdb/")) # CONUS BLM SMA polygons
+geom_out_filename <- here::here("data/data_output/blm_us_sma_20190222_valid.shp") # Colorado BLM SMA polygons
 
+# read the input feature class geometries
+geom_in <- sf::st_read(dsn=geom_in_filename)
 
-# read the SMA polygons for Colorado 
-sma_co <- sf::st_read("data/data_raw/BLM_CO_SMA_SHP/BLM_CO_SMA_20190520.shp")
+# drop Z and/or M dimensions from feature geometries 
+geom_drop_zm <- sf::st_zm(geom_in)
 
 # take a look at the attributes and number of observations
-tibble::glimpse(sma_co)
+tibble::glimpse(geom_drop_zm)
 
 # check the validity of the geometries and query the reason
-sma_co_is_valid <- sf::st_is_valid(sma_co, reason = TRUE)
+geom_is_valid <- sf::st_is_valid(geom_drop_zm, reason = TRUE)
 
 # print all reasons of invalidity 
-print(sma_co_is_valid[sma_co_is_valid != "Valid Geometry"])
-# 343 invalid reasons: "Ring Self-intersection" 
+print(geom_is_valid[geom_is_valid != "Valid Geometry"])
+# 343 invalid reasons: "Ring Self-intersection" in the CO BLM SMA data set.
+# 547 invalid reasons: "Ring Self-intersection" or NA in the CONUS data set. 
 
 # make invalid polygons valid, or remove them? 
-sma_co_valid <- lwgeom::st_make_valid(sma_co)
+geom_valid <- lwgeom::st_make_valid(geom_drop_zm)
 
 # write the valid geometries to .shp
-sf::st_write(sma_co_valid, dsn = "data/data_output/blm_co_sma_20190520_valid.shp")
+sf::st_write(geom_valid, dsn = geom_out_filename)
