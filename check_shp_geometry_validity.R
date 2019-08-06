@@ -21,11 +21,12 @@ library(lwgeom)
 library(here)
 
 # define input and output filenames 
-geom_in_filename <- (here::here("data/data_raw/BLM_National_Surface_Management_Agency/sma_wm.gdb/")) # CONUS BLM SMA polygons
-geom_out_filename <- here::here("data/data_output/blm_us_sma_20190222_valid.shp") # Colorado BLM SMA polygons
+geom_in_filename <- (here::here("data/data_raw/BLM_National_Surface_Management_Agency/sma_wm.gdb")) # CONUS BLM SMA polygons
+#geom_in_filename <-   # Colorado BLM SMA polygons
+geom_out_filename <- here::here("data/data_output/blm_us_sma_20190222_valid.shp") 
 
 # read the input feature class geometries
-geom_in <- sf::st_read(dsn=geom_in_filename)
+geom_in <- sf::st_read(geom_in_filename)
 
 # drop Z and/or M dimensions from feature geometries 
 geom_drop_zm <- sf::st_zm(geom_in)
