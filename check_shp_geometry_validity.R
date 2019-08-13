@@ -32,7 +32,7 @@ geom_in_filename <-  here::here("data/data_raw/BLM_CO_SMA_SHP/BLM_CO_SMA_2019052
 #geom_in_filename <- "BLM_National_Surface_Management_Agency/sma_wm.gdb/"
 
 # define output filename where valid geometries will be written to .shp
-geom_out_filename <- here::here("data/data_output/blm_us_sma_20190222_valid.shp") 
+geom_out_filename <- here::here("data/data_output/blm_co_sma_valid.shp") 
 
 # read the input feature class geometries
 geom_in <- sf::st_read(geom_in_filename)
