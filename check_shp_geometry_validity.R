@@ -20,9 +20,18 @@ library(tibble)
 library(lwgeom)
 library(here)
 
-# define input and output filenames 
-geom_in_filename <- (here::here("data/data_raw/BLM_National_Surface_Management_Agency/sma_wm.gdb")) # CONUS BLM SMA polygons
-#geom_in_filename <-   # Colorado BLM SMA polygons
+
+# define input filename 
+geom_in_filename <- here::here("data/data_raw/BLM_National_Surface_Management_Agency/sma_wm.gdb") # CONUS BLM SMA polygons
+geom_in_filename <-  here::here("data/data_raw/BLM_CO_SMA_SHP/BLM_CO_SMA_20190520.shp") # Colorado BLM SMA polygons
+
+# download the data directly from the interwebs 
+#download.file(url = "https://gis.blm.gov/EGISDownload/LayerPackages/BLM_National_Surface_Management_Agency.zip"
+#              , destfile = "blm_surface_management_agency_polygons_conus.zip")
+#unzip("blm_surface_management_agency_polygons_conus.zip")
+#geom_in_filename <- "BLM_National_Surface_Management_Agency/sma_wm.gdb/"
+
+# define output filename where valid geometries will be written to .shp
 geom_out_filename <- here::here("data/data_output/blm_us_sma_20190222_valid.shp") 
 
 # read the input feature class geometries
@@ -46,4 +55,4 @@ print(geom_is_valid[geom_is_valid != "Valid Geometry"])
 geom_valid <- lwgeom::st_make_valid(geom_drop_zm)
 
 # write the valid geometries to .shp
-sf::st_write(geom_valid, dsn = geom_out_filename)
+sf::st_write(obj = geom_valid, dsn = geom_out_filename)
