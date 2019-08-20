@@ -59,7 +59,8 @@ geom_is_valid <- sf::st_is_valid(geom_drop_zm, reason = TRUE)
 # print all reasons of invalidity 
 print(geom_is_valid[geom_is_valid != "Valid Geometry"])
 # 343 invalid reasons: "Ring Self-intersection" in the CO BLM SMA data set.
-# 547 invalid reasons: "Ring Self-intersection" or NA in the CONUS data set. 
+# 570 invalid reasons: "Ring Self-intersection", "Self-intersection",
+# or NA in the CONUS data set shp exported from ArcGIS. 
 
 # make invalid polygons valid, or remove them? 
 geom_valid <- lwgeom::st_make_valid(geom_drop_zm)
