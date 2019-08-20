@@ -38,6 +38,15 @@ geom_out_filename <- here::here("data/data_output/blm_conus_sma_valid.shp")
 # read the input feature class geometries
 geom_in <- sf::st_read(geom_in_filename)
 
+# check the layer names within the gdb
+#geom_layers <- sf::st_layers(dsn = geom_in_filename
+#                         , do_count = TRUE)
+
+
+# read in the first feature class of the gdb
+#geom_in_layer1 <- sf::st_read(dsn = geom_in_filename
+#                       ,layer = "Surface_Management_Agency")
+
 # drop Z and/or M dimensions from feature geometries 
 geom_drop_zm <- sf::st_zm(geom_in)
 
@@ -57,3 +66,7 @@ geom_valid <- lwgeom::st_make_valid(geom_drop_zm)
 
 # write the valid geometries to .shp
 sf::st_write(obj = geom_valid, dsn = geom_out_filename)
+
+# zip shp files into single file 
+
+# 
