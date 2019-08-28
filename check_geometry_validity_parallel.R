@@ -1,3 +1,5 @@
+# This script checks the validity of spatial geometries and fixes any invalid 
+# entries using parallel processing. 
 
 library(sf)
 library(pbapply)
@@ -21,10 +23,25 @@ geom_drop_zm <- sf::st_zm(geom_in)
 # first, split up the data frame rows into a list
 geom_split <- base::split(geom_drop_zm, seq(nrow(geom_drop_zm)))
 
-# just use the first 10 rows for testing 
-geom_split_subset <- geom_split[1:10]
+# just use the first n rows for testing 
+geom_split_subset <- geom_split[1:5]
 
 # make the geometry valid for each row in the data frame.
-cluster <- parallel::makeCluster()
+
+# calculate the number of cores and set up a cluster 
+num_cores <- parallel::detectCores() - 1
+cluster <- parallel::makeCluster(num_cores)
+
 geom_valid_list <- pbapply::pblapply(X = geom_split_subset
-                                     ,FUN = lwgeom::st_make_valid)
+                                     ,FUN = lwgeom::st_make_valid
+                                     ,cl = cluster)
+
+# subset without splitting into a list 
+geom_subset <- geom_drop_zm[1:5,]
+geom_valid_list <- pbapply::pbapply(X = geom_subset
+                                    , MARGIN = 1
+                                     ,FUN = lwgeom::st_make_valid
+                                     ,cl = cluster)
+
+# stop the cluster 
+parallel::stopCluster(cluster)
