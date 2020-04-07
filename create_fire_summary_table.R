@@ -1,0 +1,41 @@
+library(sf) 
+library(here)
+library(dplyr) 
+library(kableExtra)
+
+# read shapefile where each row describes one fire 
+fire_filename <- here::here("data/fire_stats_test.geojson")
+fire_data <- sf::st_read(fire_filename)
+
+# adjust the data type and/or precision of some fields
+fire_data$id <- as.numeric(as.character(fire_data$id))  
+fire_data$lodgepole <- round(as.numeric(as.character(fire_data$lodgepole)) * 100, digits = 1)
+fire_data$ponderosa <- round(as.numeric(as.character(fire_data$ponderosa)) * 100, digits = 1)
+fire_data$spruceFir <- round(as.numeric(as.character(fire_data$spruceFir)) * 100, digits = 1)
+fire_data$dstrb_brnd <- round(as.numeric(as.character(fire_data$dstrb_brnd)) * 100, digits = 1)
+fire_data$dstrb_unsp <- round(as.numeric(as.character(fire_data$dstrb_unsp)) * 100, digits = 1)
+fire_data$dstrb_logd <- round(as.numeric(as.character(fire_data$dstrb_logd)) * 100, digits = 1)
+fire_data$regen_dist <- round(as.numeric(as.character(fire_data$regen_dist)) * 100, digits = 1)
+fire_data$regen_harv <- round(as.numeric(as.character(fire_data$regen_harv)) * 100, digits = 1)
+
+# create a table to summarize attributes of interest per fire 
+fire_table <- as.data.frame(fire_data) %>% 
+  # select columns of interest
+  dplyr::select(id, lodgepole, ponderosa, spruceFir, dstrb_brnd, dstrb_unsp, dstrb_logd, regen_dist, regen_harv) %>%
+  # reorder the rows based on multiple variables 
+  dplyr::arrange(desc(lodgepole), desc(ponderosa), desc(spruceFir), desc(dstrb_brnd)) %>%
+  # rename the columns for interpretation
+  dplyr::rename("Fire id" = id, 
+                "Lodgepole %" = lodgepole,
+                "Ponderosa %" = ponderosa,
+                "Spruce Fir %" = spruceFir,
+                "Disturbed Burned %" = dstrb_brnd,
+                "Disturbed Unspecified %" = dstrb_unsp,
+                "Disturbed Logged %" = dstrb_logd,
+                "Regenerating Disturbed %" = regen_dist,
+                "Regenerating Harvested %" = regen_harv) 
+
+kableExtra::kable(fire_table) %>%
+  kableExtra::kable_styling(bootstrap_options = "striped", 
+                            full_width = F, 
+                            position = "left")
