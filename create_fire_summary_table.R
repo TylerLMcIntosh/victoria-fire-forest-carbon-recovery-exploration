@@ -40,6 +40,20 @@ fire_table <- as.data.frame(fire_df) %>%
                 "Regenerating Disturbed %" = regenerating_disturbed,
                 "Regenerating Harvested %" = regenerating_harvested) 
 
+# add a categorical column with dominant forest type 
+temp <- fire_df %>% 
+  dplyr::select(Fire_Name, lodgepole, ponderosa, spruceFir) %>% 
+  tidyr::gather(major_forest_type, forest_percent, lodgepole:spruceFir) %>% 
+  dplyr::group_by(Fire_Name) %>% 
+  dplyr::slice(which.max(forest_percent)) %>% 
+  dplyr::select(Fire_Name, major_forest_type) %>% 
+  st_set_geometry(NULL)
+fire_df <- fire_df %>% 
+  dplyr::left_join(temp)
+remove(temp)
+
+
+
 kableExtra::kable(fire_table) %>%
   kableExtra::kable_styling(bootstrap_options = "striped", 
                             full_width = F, 
@@ -49,28 +63,68 @@ kableExtra::kable(fire_table) %>%
 
 # Explore fire characteristics  -------------------------------------------
 
+                       # lodgepole  ponderosa  spruceFir
+forest_type_colors <- c("#005a32", "#74c476", "#e5f5e0")
 
-# Fire Years -----------------------
+# Fire Years Histogram -----------------------
 
 year_min <- min(fire_df$Year)
 year_max <- max(fire_df$Year)
 hist_year_title <- paste("Histogram: Fire Years,", year_min, "-", year_max)
 
-ggplot(fire_df, aes(x=Year)) + 
-  geom_histogram(binwidth=1, fill="#69b3a2", color="#e9ecef", alpha=0.9) + 
-  labs(title = hist_year_title, y = "Count") + 
+# create histogram, fire count per year.
+# color the bars based on the dominant forest type of each fire event. 
+ggplot(fire_df, aes(x=Year, fill = major_forest_type)) + 
+  geom_histogram(binwidth=1, color="black", 
+                 # set the outline thickness and bar transparency. 
+                 size = 0.2, alpha=0.9) + 
+  labs(title = hist_year_title, y = "Count", fill = "Dominant forest type") + 
+  # x axis label years from min to max year in increments of 4
+  scale_x_continuous(breaks = seq(year_min, year_max, by = 4)) + 
+  # set color scale of the dominant forest types
+  scale_fill_manual(values= forest_type_colors) + 
   theme_bw()
 
+# Fire Timeline -----------------------
 
-# Fire Size -----------------------
+# reorder the rows based on year
+fire_df <- fire_df %>% 
+  dplyr::arrange(desc(Year)) 
+  
+
+ggplot(fire_df) + 
+  geom_point(aes(x = reorder(Fire_Name, Year), y = Year, 
+                 # color points based on dominant forest type
+                 fill = major_forest_type), 
+             # add a black outline around each point
+             color = "black", shape=21, 
+             # size of each point, thickness of outline
+             size = 4, stroke = 0.5) + 
+  scale_y_continuous(breaks = seq(year_min, year_max, by = 4)) + 
+  labs(title = "Fire Event Timeline", y = "Year", x = "Fire Name",
+       fill = "Dominant forest type") + 
+  # Put fire name on Y axis, year on X axis
+  coord_flip() + 
+  # set the point fill colors using hex codes 
+  scale_fill_manual(values = forest_type_colors) + 
+  theme_bw() 
+
+
+# Fire Size Histogram -----------------------
 
 # don't use sci notation on x axis
 options(scipen=10000)
 
-# convert units to hectares
-ggplot(fire_df, aes(x=Acres * 0.404686)) + 
-  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.9) + 
-  labs(title = "Histogram: Fire Size", y = "Count", x = "Size [Ha]") + 
+# color the bars based on the dominant forest type of each fire event. 
+ggplot(fire_df, aes(x = Acres * 0.404686, fill = major_forest_type)) + 
+  geom_histogram(binwidth=1, color="black", 
+                 # set the outline thickness and bar transparency. 
+                 size = 0.2, alpha=0.9) + 
+  labs(title = "Histogram: Fire Size", y = "Count", x = "Size [Ha]",
+       fill = "Dominant forest type") + 
+  # x axis label years from min to max year in increments of 4
+  scale_x_continuous(breaks = seq(year_min, year_max, by = 4)) + 
+  # set color scale of the dominant forest types
+  scale_fill_manual(values= forest_type_colors) + 
   theme_bw()
-
 
