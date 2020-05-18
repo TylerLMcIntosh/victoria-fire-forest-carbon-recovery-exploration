@@ -16,6 +16,7 @@ library(dplyr)
 library(kableExtra)
 library(ggplot2)
 library(tidyr)
+library(ggrepel)
 ```
 
 ```{r, message=FALSE, warning=FALSE, include=FALSE}
@@ -152,6 +153,32 @@ ggplot(fire_df, aes(x = Acres * 0.404686)) +
        fill = "Dominant forest type") + 
   # set color scale of the dominant forest types
   scale_fill_manual(values = forest_type_colors) + 
+  theme_bw()
+```
+
+## Fire size as a function of year 
+
+```{r fig.height = 10, fig.width = 12}
+ggplot(fire_df, aes(x=Year, y=Acres * 0.404686 , 
+                    log="y", label = Fire_Name)) + 
+  geom_point(aes(# color points based on dominant forest type
+                 fill = major_forest_type), 
+             # add a black outline around each point
+             color = "black", shape=21, 
+             # size of each point, thickness of outline
+             size = 3, stroke = 0.5) + 
+  labs(title = "Fire size vs year", 
+       y = "Hectares [log transformed]", 
+       fill = "Dominant forest type") + 
+  # log transform the y axis to space out the points more 
+  scale_y_continuous(trans='log2') + 
+  scale_x_continuous(breaks = seq(year_min, year_max, by = 4)) + 
+  scale_fill_manual(values = forest_type_colors) + 
+  # add Fire Name labels
+  geom_label_repel(aes(label = Fire_Name),
+                   box.padding   = 0.35, 
+                   point.padding = 0.5,
+                   segment.color = 'grey50') + 
   theme_bw()
 ```
 
