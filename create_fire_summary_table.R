@@ -3,6 +3,7 @@ library(here)
 library(dplyr) 
 library(kableExtra)
 library(ggplot2)
+library(tidyr)
 
 # read shapefile where each row describes one fire 
 fire_filename <- here::here("data/fire_stats_test.geojson")
@@ -91,7 +92,7 @@ ggplot(fire_df, aes(x=Year, fill = major_forest_type)) +
 fire_df <- fire_df %>% 
   dplyr::arrange(desc(Year)) 
   
-
+# create timeline figure 
 ggplot(fire_df) + 
   geom_point(aes(x = reorder(Fire_Name, Year), y = Year, 
                  # color points based on dominant forest type
@@ -113,18 +114,18 @@ ggplot(fire_df) +
 # Fire Size Histogram -----------------------
 
 # don't use sci notation on x axis
-options(scipen=10000)
+#options(scipen=10000)
 
 # color the bars based on the dominant forest type of each fire event. 
-ggplot(fire_df, aes(x = Acres * 0.404686, fill = major_forest_type)) + 
-  geom_histogram(binwidth=1, color="black", 
+           # convert from Acres to Hectares? * 0.404686
+ggplot(fire_df, aes(x = Acres * 0.404686)) + 
+  geom_histogram(aes(fill = major_forest_type), color="black", 
                  # set the outline thickness and bar transparency. 
                  size = 0.2, alpha=0.9) + 
-  labs(title = "Histogram: Fire Size", y = "Count", x = "Size [Ha]",
+  labs(title = "Histogram: Fire Size", y = "Count", x = "Size [Hectares]",
        fill = "Dominant forest type") + 
-  # x axis label years from min to max year in increments of 4
-  scale_x_continuous(breaks = seq(year_min, year_max, by = 4)) + 
   # set color scale of the dominant forest types
-  scale_fill_manual(values= forest_type_colors) + 
+  scale_fill_manual(values = forest_type_colors) + 
   theme_bw()
+
 
