@@ -1,5 +1,5 @@
 ---
-title: "create_fire_summary_table"
+title: "Explore fire data"
 output: html_document
 ---
 
@@ -8,52 +8,150 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 # Install packages
 library(sf) 
 library(here)
 library(dplyr) 
 library(kableExtra)
+library(ggplot2)
+library(tidyr)
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 # read shapefile where each row describes one fire 
 fire_filename <- here::here("data/fire_stats_test.geojson")
-fire_data <- sf::st_read(fire_filename)
+fire_df <- sf::st_read(fire_filename)
 
 # adjust the data type and/or precision of some fields
-fire_data$id <- as.numeric(as.character(fire_data$id))  # convert factor to numeric integer
-# display as percentage 
-fire_data$lodgepole <- round(as.numeric(as.character(fire_data$lodgepole)) * 100, digits = 1)
-fire_data$ponderosa <- round(as.numeric(as.character(fire_data$ponderosa)) * 100, digits = 1)
-fire_data$spruceFir <- round(as.numeric(as.character(fire_data$spruceFir)) * 100, digits = 1)
-fire_data$dstrb_brnd <- round(as.numeric(as.character(fire_data$dstrb_brnd)) * 100, digits = 1)
-fire_data$dstrb_unsp <- round(as.numeric(as.character(fire_data$dstrb_unsp)) * 100, digits = 1)
-fire_data$dstrb_logd <- round(as.numeric(as.character(fire_data$dstrb_logd)) * 100, digits = 1)
-fire_data$regen_dist <- round(as.numeric(as.character(fire_data$regen_dist)) * 100, digits = 1)
-fire_data$regen_harv <- round(as.numeric(as.character(fire_data$regen_harv)) * 100, digits = 1)
+fire_df$id <- as.character(fire_df$id)
+fire_df$Acres <- as.integer(fire_df$Acres)
+fire_df$lodgepole <- round(as.numeric(as.character(fire_df$lodgepole)) * 100, digits = 1)
+fire_df$ponderosa <- round(as.numeric(as.character(fire_df$ponderosa)) * 100, digits = 1)
+fire_df$spruceFir <- round(as.numeric(as.character(fire_df$spruceFir)) * 100, digits = 1)
+fire_df$disturbed_burned <- round(as.numeric(as.character(fire_df$disturbed_burned)) * 100, digits = 1)
+fire_df$disturbed_unspecific <- round(as.numeric(as.character(fire_df$disturbed_unspecific)) * 100, digits = 1)
+fire_df$disturbed_logged <- round(as.numeric(as.character(fire_df$disturbed_logged)) * 100, digits = 1)
+fire_df$regenerating_disturbed <- round(as.numeric(as.character(fire_df$regenerating_disturbed)) * 100, digits = 1)
+fire_df$regenerating_harvested <- round(as.numeric(as.character(fire_df$regenerating_harvested)) * 100, digits = 1)
+```
+
+```{r, message=FALSE, warning=FALSE}
 
 # create a table to summarize attributes of interest per fire 
-fire_table <- as.data.frame(fire_data) %>% 
+fire_table <- as.data.frame(fire_df) %>% 
   # select columns of interest
-  dplyr::select(id, lodgepole, ponderosa, spruceFir, dstrb_brnd, dstrb_unsp, dstrb_logd, regen_dist, regen_harv) %>%
+  dplyr::select(Fire_Name, Year, Acres, lodgepole, ponderosa, spruceFir, disturbed_burned, disturbed_unspecific, 
+                disturbed_logged, regenerating_disturbed, regenerating_harvested) %>%
   # reorder the rows based on multiple variables 
-  dplyr::arrange(desc(lodgepole), desc(ponderosa), desc(spruceFir), desc(dstrb_brnd)) %>%
+  dplyr::arrange(desc(lodgepole), desc(ponderosa), desc(spruceFir), desc(disturbed_burned)) %>%
   # rename the columns for interpretation
-  dplyr::rename("Fire id" = id, 
+  dplyr::rename("Fire Name" = Fire_Name, 
+                "Year" = Year,
+                "Acres" = Acres,
                 "Lodgepole %" = lodgepole,
                 "Ponderosa %" = ponderosa,
                 "Spruce Fir %" = spruceFir,
-                "Disturbed Burned %" = dstrb_brnd,
-                "Disturbed Unspecified %" = dstrb_unsp,
-                "Disturbed Logged %" = dstrb_logd,
-                "Regenerating Disturbed %" = regen_dist,
-                "Regenerating Harvested %" = regen_harv) 
+                "Disturbed Burned %" = disturbed_burned,
+                "Disturbed Unspecified %" = disturbed_unspecific,
+                "Disturbed Logged %" = disturbed_logged,
+                "Regenerating Disturbed %" = regenerating_disturbed,
+                "Regenerating Harvested %" = regenerating_harvested) 
+
+# add a categorical column with dominant forest type 
+temp <- fire_df %>% 
+  dplyr::select(Fire_Name, lodgepole, ponderosa, spruceFir) %>% 
+  tidyr::gather(major_forest_type, forest_percent, lodgepole:spruceFir) %>% 
+  dplyr::group_by(Fire_Name) %>% 
+  dplyr::slice(which.max(forest_percent)) %>% 
+  dplyr::select(Fire_Name, major_forest_type) %>% 
+  st_set_geometry(NULL)
+fire_df <- fire_df %>% 
+  dplyr::left_join(temp)
+remove(temp)
+
+
 
 kableExtra::kable(fire_table) %>%
   kableExtra::kable_styling(bootstrap_options = "striped", 
                             full_width = F, 
                             position = "left")
 
+```
+
+# Explore the fire data
+
+## Fire timeline 
+
+```{r, fig.height = 8, fig.width = 10}
+
+# calculate minimum and maximum fire years
+year_min <- min(fire_df$Year)
+year_max <- max(fire_df$Year)
+
+# set forest type colors for the figures
+                       # lodgepole  ponderosa  spruceFir
+forest_type_colors <- c("#005a32", "#74c476", "#e5f5e0")
+
+
+# reorder the rows based on year
+fire_df <- fire_df %>% 
+  dplyr::arrange(desc(Year)) 
+
+# create timeline figure 
+ggplot(fire_df) + 
+  geom_point(aes(x = reorder(Fire_Name, Year), y = Year, 
+                 # color points based on dominant forest type
+                 fill = major_forest_type), 
+             # add a black outline around each point
+             color = "black", shape=21, 
+             # size of each point, thickness of outline
+             size = 4, stroke = 0.5) + 
+  scale_y_continuous(breaks = seq(year_min, year_max, by = 4)) + 
+  labs(title = "Fire Event Timeline", y = "Year", x = "Fire Name",
+       fill = "Dominant forest type") + 
+  # Put fire name on Y axis, year on X axis
+  coord_flip() + 
+  # set the point fill colors using hex codes 
+  scale_fill_manual(values = forest_type_colors) + 
+  theme_bw() 
+```
+
+
+## Fire year histogram
+
+```{r message=FALSE, warning=FALSE, fig.align="center"}
+
+hist_year_title <- paste("Histogram: Fire Years,", year_min, "-", year_max)
+
+# create histogram, fire count per year.
+# color the bars based on the dominant forest type of each fire event. 
+ggplot(fire_df, aes(x=Year, fill = major_forest_type)) + 
+  geom_histogram(binwidth=1, color="black", 
+                 # set the outline thickness and bar transparency. 
+                 size = 0.2, alpha=0.9) + 
+  labs(title = hist_year_title, y = "Count", fill = "Dominant forest type") + 
+  # x axis label years from min to max year in increments of 4
+  scale_x_continuous(breaks = seq(year_min, year_max, by = 4)) + 
+  # set color scale of the dominant forest types
+  scale_fill_manual(values= forest_type_colors) + 
+  theme_bw()
+
+```
+
+## Fire size histogram
+
+```{r message=FALSE, warning=FALSE, fig.align="center"}
+# color the bars based on the dominant forest type of each fire event. 
+           # convert from Acres to Hectares? * 0.404686
+ggplot(fire_df, aes(x = Acres * 0.404686)) + 
+  geom_histogram(aes(fill = major_forest_type), color="black", 
+                 # set the outline thickness and bar transparency. 
+                 size = 0.2, alpha=0.9) + 
+  labs(title = "Histogram: Fire Size", y = "Count", x = "Size [Hectares]",
+       fill = "Dominant forest type") + 
+  # set color scale of the dominant forest types
+  scale_fill_manual(values = forest_type_colors) + 
+  theme_bw()
 ```
 

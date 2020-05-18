@@ -67,6 +67,31 @@ kableExtra::kable(fire_table) %>%
                        # lodgepole  ponderosa  spruceFir
 forest_type_colors <- c("#005a32", "#74c476", "#e5f5e0")
 
+# Fire Event Timeline -----------------------
+
+# reorder the rows based on year
+fire_df <- fire_df %>% 
+  dplyr::arrange(desc(Year)) 
+
+# create timeline figure 
+ggplot(fire_df) + 
+  geom_point(aes(x = reorder(Fire_Name, Year), y = Year, 
+                 # color points based on dominant forest type
+                 fill = major_forest_type), 
+             # add a black outline around each point
+             color = "black", shape=21, 
+             # size of each point, thickness of outline
+             size = 4, stroke = 0.5) + 
+  scale_y_continuous(breaks = seq(year_min, year_max, by = 4)) + 
+  labs(title = "Fire Event Timeline", y = "Year", x = "Fire Name",
+       fill = "Dominant forest type") + 
+  # Put fire name on Y axis, year on X axis
+  coord_flip() + 
+  # set the point fill colors using hex codes 
+  scale_fill_manual(values = forest_type_colors) + 
+  theme_bw() 
+
+
 # Fire Years Histogram -----------------------
 
 year_min <- min(fire_df$Year)
@@ -85,30 +110,6 @@ ggplot(fire_df, aes(x=Year, fill = major_forest_type)) +
   # set color scale of the dominant forest types
   scale_fill_manual(values= forest_type_colors) + 
   theme_bw()
-
-# Fire Timeline -----------------------
-
-# reorder the rows based on year
-fire_df <- fire_df %>% 
-  dplyr::arrange(desc(Year)) 
-  
-# create timeline figure 
-ggplot(fire_df) + 
-  geom_point(aes(x = reorder(Fire_Name, Year), y = Year, 
-                 # color points based on dominant forest type
-                 fill = major_forest_type), 
-             # add a black outline around each point
-             color = "black", shape=21, 
-             # size of each point, thickness of outline
-             size = 4, stroke = 0.5) + 
-  scale_y_continuous(breaks = seq(year_min, year_max, by = 4)) + 
-  labs(title = "Fire Event Timeline", y = "Year", x = "Fire Name",
-       fill = "Dominant forest type") + 
-  # Put fire name on Y axis, year on X axis
-  coord_flip() + 
-  # set the point fill colors using hex codes 
-  scale_fill_manual(values = forest_type_colors) + 
-  theme_bw() 
 
 
 # Fire Size Histogram -----------------------
