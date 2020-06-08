@@ -24,12 +24,15 @@ library(ggrepel)
 
 
 # MTBS fires on USFS land, 200km from NIWO, within NEON domain 13
-#fire_filename <- here::here("data/fire_stats_test.geojson")
+#      Fig 1 height: 8, Fig 4 height: 10
+fire_filename <- here::here("data/fire_stats_test.geojson")
 
 # MTBS fires on USFS land, within the Southern Rockies EPA Level III ecoregion
-fire_filename <- here::here("data/fires_sRockiesEcoregion_USFS.geojson")
+#      Fig 1 height: 16, Fig 4 height: 16
+#fire_filename <- here::here("data/fires_sRockiesEcoregion_USFS.geojson")
 
 # MTBS fires within the Southern Rockies EPA Level III ecoregion
+#      Fig 1 height: 24, Fig 4 height: 30
 #fire_filename <- here::here("data/fires_sRockiesEcoregion.geojson")
 
 
@@ -96,7 +99,7 @@ kableExtra::kable(fire_table) %>%
 
 ## Fire timeline 
 
-```{r, fig.height = 8, fig.width = 10}
+```{r, fig.height = 16, fig.width = 10}
 
 # calculate minimum and maximum fire years
 year_min <- min(fire_df$Year)
@@ -170,7 +173,7 @@ ggplot(fire_df, aes(x = Acres * 0.404686)) +
 
 ## Fire size as a function of year 
 
-```{r fig.height = 10, fig.width = 12}
+```{r fig.height = 16, fig.width = 12}
 ggplot(fire_df, aes(x=Year, y=Acres * 0.404686 , 
                     log="y", label = Fire_Name)) + 
   geom_point(aes(# color points based on dominant forest type
