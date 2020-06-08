@@ -6,9 +6,21 @@ library(ggplot2)
 library(tidyr)
 library(ggrepel)
 
-# read shapefile where each row describes one fire 
+# read shapefile where each row describes one fire -----------------------
+
+# MTBS fires on USFS land, 200km from NIWO, within NEON domain 13
 fire_filename <- here::here("data/fire_stats_test.geojson")
+
+# MTBS fires on USFS land, within the Southern Rockies EPA Level III ecoregion
+fire_filename <- here::here("data/fires_sRockiesEcoregion_USFS.geojson")
+
+# MTBS fires within the Southern Rockies EPA Level III ecoregion
+fire_filename <- here::here("data/fires_sRockiesEcoregion.geojson")
+
+
 fire_df <- sf::st_read(fire_filename)
+
+---------------------------------------------------------------------------
 
 # adjust the data type and/or precision of some fields
 fire_df$id <- as.character(fire_df$id)
