@@ -25,7 +25,7 @@ library(ggrepel)
 
 # MTBS fires on USFS land, 200km from NIWO, within NEON domain 13
 #      Fig 1 height: 8, Fig 4 height: 10
-fire_filename <- here::here("data/fire_stats_test.geojson")
+#fire_filename <- here::here("data/fire_stats_test.geojson")
 
 # MTBS fires on USFS land, within the Southern Rockies EPA Level III ecoregion
 #      Fig 1 height: 16, Fig 4 height: 16
@@ -33,7 +33,7 @@ fire_filename <- here::here("data/fire_stats_test.geojson")
 
 # MTBS fires within the Southern Rockies EPA Level III ecoregion
 #      Fig 1 height: 24, Fig 4 height: 30
-#fire_filename <- here::here("data/fires_sRockiesEcoregion.geojson")
+fire_filename <- here::here("data/fires_sRockiesEcoregion.geojson")
 
 
 
@@ -95,11 +95,22 @@ kableExtra::kable(fire_table) %>%
 
 ```
 
+
+```{r}
+# count number of fires with each dominant forest type 
+kableExtra::kable(table(fire_df$major_forest_type),
+                  col.names = c("Dominant forest type", "# of fire events")) %>%
+  kableExtra::kable_styling(bootstrap_options = "striped", 
+                            full_width = F, 
+                            position = "left")
+```
+
+
 # Explore the fire data
 
 ## Fire timeline 
 
-```{r, fig.height = 16, fig.width = 10}
+```{r fig1, fig.height = 24, fig.width = 10}
 
 # calculate minimum and maximum fire years
 year_min <- min(fire_df$Year)
@@ -173,7 +184,7 @@ ggplot(fire_df, aes(x = Acres * 0.404686)) +
 
 ## Fire size as a function of year 
 
-```{r fig.height = 16, fig.width = 12}
+```{r fig.height = 30, fig.width = 12}
 ggplot(fire_df, aes(x=Year, y=Acres * 0.404686 , 
                     log="y", label = Fire_Name)) + 
   geom_point(aes(# color points based on dominant forest type
