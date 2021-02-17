@@ -35,8 +35,27 @@ library(ggrepel)
 #      Fig 1 height: 24, Fig 4 height: 30
 #fire_filename <- here::here("data/fires_sRockiesEcoregion.geojson")
 
+# MTBS fires on USFS land, 200km from NIWO
+fire_filename <- here::here("data/fires_MTBS_local.geojson")
+
+# FIRED fires on USFS land, 200km from NIWO
+# Is there a way to get a fire's name from the FIRED data? 
+#fire_filename <- here::here("data/fires_FIRED_local.geojson")
 
 
+# NAME OF CURRENT DATA SET OR ITERATION
+# used to name output figures
+out_label <- "MTBS_local"
+
+
+
+# Set figure height and width for Rmd html output
+figHeight <- 10
+figWidth <- 10
+
+
+
+# read the fire data
 fire_df <- sf::st_read(fire_filename)
 
 # adjust the data type and/or precision of some fields
@@ -56,7 +75,12 @@ fire_df$regenerating_harvested <- round(as.numeric(as.character(fire_df$regenera
 ```{r}
 # how many fires in this data set? 
 message("# of fires in dataset: ")
-message(nrow(fire_data))
+message(nrow(fire_df))
+
+# create output directory for figures
+if(!dir.exists(here::here("figures"))){
+  dir.create(here::here("figures"))
+}
 ```
 
 
@@ -116,9 +140,10 @@ kableExtra::kable(table(fire_df$major_forest_type),
 
 # Explore the fire data
 
+
 ## Fire timeline 
 
-```{r fig1, fig.height = 24, fig.width = 10}
+```{r fig1, fig.height = figHeight, fig.width = figWidth}
 
 # calculate minimum and maximum fire years
 year_min <- min(fire_df$Year)
@@ -133,6 +158,10 @@ forest_type_colors <- c("#005a32", "#74c476", "#e5f5e0")
 fire_df <- fire_df %>% 
   dplyr::arrange(desc(Year)) 
 
+# calculate point size - scaled relatively by fire size
+tmp <- log(fire_df$Acres / max(fire_df$Acres))
+tmp <- tmp + abs(min(tmp)) + 1
+
 # create timeline figure 
 ggplot(fire_df) + 
   geom_point(aes(x = reorder(Fire_Name, Year), y = Year, 
@@ -141,15 +170,20 @@ ggplot(fire_df) +
              # add a black outline around each point
              color = "black", shape=21, 
              # size of each point, thickness of outline
-             size = 4, stroke = 0.5) + 
+             size = tmp, 
+             stroke = 0.5) + 
   scale_y_continuous(breaks = seq(year_min, year_max, by = 4)) + 
-  labs(title = "Fire Event Timeline", y = "Year", x = "Fire Name",
+  labs(title = "Fire Event Timeline", y = "Year", x = "Fire Name\n",
        fill = "Dominant forest type") + 
   # Put fire name on Y axis, year on X axis
   coord_flip() + 
   # set the point fill colors using hex codes 
   scale_fill_manual(values = forest_type_colors) + 
   theme_bw() 
+
+# Save figure to file
+ggsave(filename = (here::here(file.path("figures",paste0(out_label,"-fire_timeline.png")))),
+       width = 8, height = 6)
 ```
 
 
@@ -172,6 +206,9 @@ ggplot(fire_df, aes(x=Year, fill = major_forest_type)) +
   scale_fill_manual(values= forest_type_colors) + 
   theme_bw()
 
+# Save figure to file
+ggsave(filename = (here::here(file.path("figures",paste0(out_label,"-fire_hist_years.png")))),
+       width = 7, height = 5)
 ```
 
 ## Fire size histogram
@@ -188,11 +225,15 @@ ggplot(fire_df, aes(x = Acres * 0.404686)) +
   # set color scale of the dominant forest types
   scale_fill_manual(values = forest_type_colors) + 
   theme_bw()
+
+# Save figure to file
+ggsave(filename = (here::here(file.path("figures",paste0(out_label,"-fire_hist_size.png")))),
+       width = 7, height = 5)
 ```
 
 ## Fire size as a function of year 
 
-```{r fig.height = 30, fig.width = 12}
+```{r, fig.height = 10, fig.width = 10}
 ggplot(fire_df, aes(x=Year, y=Acres * 0.404686 , 
                     log="y", label = Fire_Name)) + 
   geom_point(aes(# color points based on dominant forest type
@@ -200,7 +241,7 @@ ggplot(fire_df, aes(x=Year, y=Acres * 0.404686 ,
              # add a black outline around each point
              color = "black", shape=21, 
              # size of each point, thickness of outline
-             size = 3, stroke = 0.5) + 
+             size = 4, stroke = 0.5) + 
   labs(title = "Fire size vs year", 
        y = "Hectares [log transformed]", 
        fill = "Dominant forest type") + 
@@ -213,6 +254,18 @@ ggplot(fire_df, aes(x=Year, y=Acres * 0.404686 ,
                    box.padding   = 0.35, 
                    point.padding = 0.5,
                    segment.color = 'grey50') + 
-  theme_bw()
+  
+  theme_bw() + 
+  # font size
+  theme(axis.text.y = element_text(size=16),
+        axis.title.y = element_text(size=16),
+        axis.text.x = element_text(size=16),
+        axis.title.x = element_text(size=16),
+        # move the legend to the top of the figure
+        legend.position="top") 
+
+# Save figure to file
+ggsave(filename = (here::here(file.path("figures",paste0(out_label,"-fire_size_vs_year_scatterplot.png")))),
+       width = 7, height = 9)
 ```
 
