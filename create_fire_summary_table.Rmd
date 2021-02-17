@@ -33,7 +33,7 @@ library(ggrepel)
 
 # MTBS fires within the Southern Rockies EPA Level III ecoregion
 #      Fig 1 height: 24, Fig 4 height: 30
-fire_filename <- here::here("data/fires_sRockiesEcoregion.geojson")
+#fire_filename <- here::here("data/fires_sRockiesEcoregion.geojson")
 
 
 
@@ -51,6 +51,14 @@ fire_df$disturbed_logged <- round(as.numeric(as.character(fire_df$disturbed_logg
 fire_df$regenerating_disturbed <- round(as.numeric(as.character(fire_df$regenerating_disturbed)) * 100, digits = 1)
 fire_df$regenerating_harvested <- round(as.numeric(as.character(fire_df$regenerating_harvested)) * 100, digits = 1)
 ```
+
+
+```{r}
+# how many fires in this data set? 
+message("# of fires in dataset: ")
+message(nrow(fire_data))
+```
+
 
 ```{r, message=FALSE, warning=FALSE}
 
