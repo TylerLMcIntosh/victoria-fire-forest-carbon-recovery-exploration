@@ -178,7 +178,11 @@ ggplot(fire_df) +
   # Put fire name on Y axis, year on X axis
   coord_flip() + 
   # set the point fill colors using hex codes 
-  scale_fill_manual(values = forest_type_colors) + 
+  scale_fill_manual(values = forest_type_colors,
+                    labels = c("Lodgepole pine", "Ponderosa pine", "Spruce fir")) + 
+  # set the point size in legend 
+  guides(fill = guide_legend(override.aes = list(size=4))) + 
+  # clean theme for plot with white background
   theme_bw() 
 
 # Save figure to file
@@ -203,7 +207,8 @@ ggplot(fire_df, aes(x=Year, fill = major_forest_type)) +
   # x axis label years from min to max year in increments of 4
   scale_x_continuous(breaks = seq(year_min, year_max, by = 4)) + 
   # set color scale of the dominant forest types
-  scale_fill_manual(values= forest_type_colors) + 
+  scale_fill_manual(values= forest_type_colors,
+                    labels = c("Lodgepole pine", "Ponderosa pine", "Spruce fir")) + 
   theme_bw()
 
 # Save figure to file
@@ -223,7 +228,8 @@ ggplot(fire_df, aes(x = Acres * 0.404686)) +
   labs(title = "Histogram: Fire Size", y = "Count", x = "Size [Hectares]",
        fill = "Dominant forest type") + 
   # set color scale of the dominant forest types
-  scale_fill_manual(values = forest_type_colors) + 
+  scale_fill_manual(values = forest_type_colors,
+                    labels = c("Lodgepole pine", "Ponderosa pine", "Spruce fir")) + 
   theme_bw()
 
 # Save figure to file
@@ -248,7 +254,8 @@ ggplot(fire_df, aes(x=Year, y=Acres * 0.404686 ,
   # log transform the y axis to space out the points more 
   scale_y_continuous(trans='log2') + 
   scale_x_continuous(breaks = seq(year_min, year_max, by = 4)) + 
-  scale_fill_manual(values = forest_type_colors) + 
+  scale_fill_manual(values = forest_type_colors,
+                    labels = c("Lodgepole pine", "Ponderosa pine", "Spruce fir")) + 
   # add Fire Name labels
   geom_label_repel(aes(label = Fire_Name),
                    box.padding   = 0.35, 
