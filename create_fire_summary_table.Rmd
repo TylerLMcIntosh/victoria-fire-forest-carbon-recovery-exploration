@@ -7,6 +7,10 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+Create a table summarizing data layers within each MTBS fire. 
+Layers were assembled and reduced in Google Earth Engine: 
+
+- 
 
 ```{r, message=FALSE, warning=FALSE, include=FALSE}
 # Install packages
@@ -36,16 +40,20 @@ library(ggrepel)
 #fire_filename <- here::here("data/fires_sRockiesEcoregion.geojson")
 
 # MTBS fires on USFS land, 200km from NIWO
-fire_filename <- here::here("data/fires_MTBS_local.geojson")
+#fire_filename <- here::here("data/fires_MTBS_local.geojson")
 
 # FIRED fires on USFS land, 200km from NIWO
 # Is there a way to get a fire's name from the FIRED data? 
 #fire_filename <- here::here("data/fires_FIRED_local.geojson")
 
+# MTBS fires <200km from NIWO, with forest cover, addding in GEDI cover 
+fire_filename <- here::here("data/fires_stats_20210312.geojson")
+
+
 
 # NAME OF CURRENT DATA SET OR ITERATION
 # used to name output figures
-out_label <- "MTBS_local"
+out_label <- "MTBS_local_with_GEDI"
 
 
 
@@ -59,16 +67,17 @@ figWidth <- 10
 fire_df <- sf::st_read(fire_filename)
 
 # adjust the data type and/or precision of some fields
-fire_df$id <- as.character(fire_df$id)
-fire_df$Acres <- as.integer(fire_df$Acres)
-fire_df$lodgepole <- round(as.numeric(as.character(fire_df$lodgepole)) * 100, digits = 1)
-fire_df$ponderosa <- round(as.numeric(as.character(fire_df$ponderosa)) * 100, digits = 1)
-fire_df$spruceFir <- round(as.numeric(as.character(fire_df$spruceFir)) * 100, digits = 1)
-fire_df$disturbed_burned <- round(as.numeric(as.character(fire_df$disturbed_burned)) * 100, digits = 1)
-fire_df$disturbed_unspecific <- round(as.numeric(as.character(fire_df$disturbed_unspecific)) * 100, digits = 1)
-fire_df$disturbed_logged <- round(as.numeric(as.character(fire_df$disturbed_logged)) * 100, digits = 1)
-fire_df$regenerating_disturbed <- round(as.numeric(as.character(fire_df$regenerating_disturbed)) * 100, digits = 1)
-fire_df$regenerating_harvested <- round(as.numeric(as.character(fire_df$regenerating_harvested)) * 100, digits = 1)
+fire_df$id <- as.character(fire_df$id)     # Fire name 
+fire_df$Acres <- as.integer(fire_df$Acres) # Fire size [acres]
+fire_df$gedi_coverage <- round(as.numeric(as.character(fire_df$lodgepole)) * 100, digits = 1) # Percent GEDI pixels in fire perimeter
+fire_df$lodgepole <- round(as.numeric(as.character(fire_df$lodgepole)) * 100, digits = 1)     # Percent lodgepole 
+fire_df$ponderosa <- round(as.numeric(as.character(fire_df$ponderosa)) * 100, digits = 1)     # Percent ponderosa pine 
+fire_df$spruceFir <- round(as.numeric(as.character(fire_df$spruceFir)) * 100, digits = 1)     # Percent spruce/fir 
+fire_df$disturbed_burned <- round(as.numeric(as.character(fire_df$disturbed_burned)) * 100, digits = 1) # Percent burned
+fire_df$disturbed_unspecific <- round(as.numeric(as.character(fire_df$disturbed_unspecific)) * 100, digits = 1) # Percent disturbed
+#fire_df$disturbed_logged <- round(as.numeric(as.character(fire_df$disturbed_logged)) * 100, digits = 1)
+#fire_df$regenerating_disturbed <- round(as.numeric(as.character(fire_df$regenerating_disturbed)) * 100, digits = 1)
+#fire_df$regenerating_harvested <- round(as.numeric(as.character(fire_df$regenerating_harvested)) * 100, digits = 1)
 ```
 
 
@@ -89,22 +98,25 @@ if(!dir.exists(here::here("figures"))){
 # create a table to summarize attributes of interest per fire 
 fire_table <- as.data.frame(fire_df) %>% 
   # select columns of interest
-  dplyr::select(Fire_Name, Year, Acres, lodgepole, ponderosa, spruceFir, disturbed_burned, disturbed_unspecific, 
-                disturbed_logged, regenerating_disturbed, regenerating_harvested) %>%
+  dplyr::select(Fire_Name, Year, Acres, gedi_coverage, lodgepole, ponderosa, spruceFir, disturbed_burned, disturbed_unspecific, 
+                #disturbed_logged, regenerating_disturbed, regenerating_harvested
+                ) %>%
   # reorder the rows based on multiple variables 
-  dplyr::arrange(desc(lodgepole), desc(ponderosa), desc(spruceFir), desc(disturbed_burned)) %>%
+  dplyr::arrange(desc(gedi_coverage), desc(lodgepole), desc(ponderosa), desc(spruceFir), desc(disturbed_burned)) %>%
   # rename the columns for interpretation
   dplyr::rename("Fire Name" = Fire_Name, 
                 "Year" = Year,
                 "Acres" = Acres,
+                "GEDI %" = gedi_coverage,
                 "Lodgepole %" = lodgepole,
                 "Ponderosa %" = ponderosa,
                 "Spruce Fir %" = spruceFir,
                 "Disturbed Burned %" = disturbed_burned,
                 "Disturbed Unspecified %" = disturbed_unspecific,
-                "Disturbed Logged %" = disturbed_logged,
-                "Regenerating Disturbed %" = regenerating_disturbed,
-                "Regenerating Harvested %" = regenerating_harvested) 
+                #"Disturbed Logged %" = disturbed_logged,
+                #"Regenerating Disturbed %" = regenerating_disturbed,
+                #"Regenerating Harvested %" = regenerating_harvested
+                ) 
 
 # add a categorical column with dominant forest type 
 temp <- fire_df %>% 
@@ -141,6 +153,28 @@ kableExtra::kable(table(fire_df$major_forest_type),
 # Explore the fire data
 
 
+## Map 
+
+```{r, fig.height=10, fig.width=10, message=FALSE}
+library(leaflet)
+library(rgdal)
+
+# read geojson file
+fire_gjson <- rgdal::readOGR(fire_filename)
+
+# color palette
+pal <- colorNumeric("viridis", NULL)
+
+# map the fire polygons
+leaflet(fire_gjson) %>%
+  addTiles() %>%
+  addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1,
+    fillColor = ~pal(Year)) %>%
+  addProviderTiles(providers$CartoDB.Positron) 
+```
+
+
+
 ## Fire timeline 
 
 ```{r fig1, fig.height = figHeight, fig.width = figWidth}
@@ -151,7 +185,8 @@ year_max <- max(fire_df$Year)
 
 # set forest type colors for the figures
                        # lodgepole  ponderosa  spruceFir
-forest_type_colors <- c("#005a32", "#74c476", "#e5f5e0")
+#forest_type_colors <- c("#005a32", "#74c476", "#e5f5e0") 
+forest_type_colors <- c("#04663B", "#41ab5d", "#c7e9c0")
 
 
 # reorder the rows based on year
@@ -160,7 +195,7 @@ fire_df <- fire_df %>%
 
 # calculate point size - scaled relatively by fire size
 tmp <- log(fire_df$Acres / max(fire_df$Acres))
-tmp <- tmp + abs(min(tmp)) + 1
+tmp <- tmp + abs(min(tmp)) + 1.25
 
 # create timeline figure 
 ggplot(fire_df) + 
@@ -171,7 +206,7 @@ ggplot(fire_df) +
              color = "black", shape=21, 
              # size of each point, thickness of outline
              size = tmp, 
-             stroke = 0.5) + 
+             stroke = 0.3) + 
   scale_y_continuous(breaks = seq(year_min, year_max, by = 4)) + 
   labs(title = "Fire Event Timeline", y = "Year", x = "Fire Name\n",
        fill = "Dominant forest type") + 
@@ -179,7 +214,7 @@ ggplot(fire_df) +
   coord_flip() + 
   # set the point fill colors using hex codes 
   scale_fill_manual(values = forest_type_colors,
-                    labels = c("Lodgepole pine", "Ponderosa pine", "Spruce fir")) + 
+                    labels = c("Lodgepole pine", "Ponderosa pine", "Spruce/Fir")) + 
   # set the point size in legend 
   guides(fill = guide_legend(override.aes = list(size=4))) + 
   # clean theme for plot with white background
@@ -208,7 +243,7 @@ ggplot(fire_df, aes(x=Year, fill = major_forest_type)) +
   scale_x_continuous(breaks = seq(year_min, year_max, by = 4)) + 
   # set color scale of the dominant forest types
   scale_fill_manual(values= forest_type_colors,
-                    labels = c("Lodgepole pine", "Ponderosa pine", "Spruce fir")) + 
+                    labels = c("Lodgepole pine", "Ponderosa pine", "Spruce/Fir")) + 
   theme_bw()
 
 # Save figure to file
@@ -229,7 +264,7 @@ ggplot(fire_df, aes(x = Acres * 0.404686)) +
        fill = "Dominant forest type") + 
   # set color scale of the dominant forest types
   scale_fill_manual(values = forest_type_colors,
-                    labels = c("Lodgepole pine", "Ponderosa pine", "Spruce fir")) + 
+                    labels = c("Lodgepole pine", "Ponderosa pine", "Spruce/Fir")) + 
   theme_bw()
 
 # Save figure to file
@@ -255,7 +290,7 @@ ggplot(fire_df, aes(x=Year, y=Acres * 0.404686 ,
   scale_y_continuous(trans='log2') + 
   scale_x_continuous(breaks = seq(year_min, year_max, by = 4)) + 
   scale_fill_manual(values = forest_type_colors,
-                    labels = c("Lodgepole pine", "Ponderosa pine", "Spruce fir")) + 
+                    labels = c("Lodgepole pine", "Ponderosa pine", "Spruce/Fir")) + 
   # add Fire Name labels
   geom_label_repel(aes(label = Fire_Name),
                    box.padding   = 0.35, 
