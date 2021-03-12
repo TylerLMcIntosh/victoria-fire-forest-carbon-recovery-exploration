@@ -204,7 +204,7 @@ map <- leaflet(fire_gjson) %>%
 # Icons 
 icons <- makeAwesomeIcon(
   icon = "fire",
-  iconColor = "black",
+  iconColor = "orange",
   library = "fa",
   markerColor = "gray"
 )
@@ -217,6 +217,9 @@ icons <- makeAwesomeIcon(
                lat = fire_df$centroid_lat, 
                icon=icons,
                popup = fire_df$centroid_label)
+
+  # change icon width and height using makeIcon? 
+  # check out CircleMarkers? 
 
 # display map
 map
