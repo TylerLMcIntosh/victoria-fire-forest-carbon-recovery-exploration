@@ -155,22 +155,72 @@ kableExtra::kable(table(fire_df$major_forest_type),
 
 ## Map 
 
-```{r, fig.height=10, fig.width=10, message=FALSE}
+```{r, fig.height=9, fig.width=9, message=FALSE, warning=FALSE}
 library(leaflet)
 library(rgdal)
+library(geojsonio)
 
-# read geojson file
+# read geojson file for mapping with leaflet
 fire_gjson <- rgdal::readOGR(fire_filename)
 
+# add a column with fire perimeter centroid point locations for map labels
+fire_df$centroid_lon <- NA
+fire_df$centroid_lat <- NA
+fire_df$centroid_label <- NA
+for (i in 1:nrow(fire_df)){
+  # create popup label using fire name and year
+  content <- paste(sep = "<br/>",
+    fire_df$Fire_Name[i], fire_df$Year[i])
+  print(content)
+  fire_df$centroid_label[i] <- content
+  
+  # get lon, lat coordinates of geometry centroid  
+  fire_df$centroid_lon[i] <- st_centroid(fire_df$geometry[i])[[1]][1]
+  fire_df$centroid_lat[i] <- st_centroid(fire_df$geometry[i])[[1]][2]
+}
+
+
 # color palette
-pal <- colorNumeric("viridis", NULL)
+pal <- colorNumeric(
+  palette = "viridis",
+  domain = fire_gjson$Year
+)
 
 # map the fire polygons
-leaflet(fire_gjson) %>%
+map <- leaflet(fire_gjson) %>%
   addTiles() %>%
-  addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1,
-    fillColor = ~pal(Year)) %>%
+  addPolygons(stroke = FALSE, smoothFactor = 0.2, fillOpacity = 0.7,
+    color = ~pal(Year)
+  ) %>%
+  addLegend("bottomright", pal = pal, values = ~Year,
+    title = "Fire Year",
+    # get rid of the comma in years (1,990 becomes 1990) for legend entries
+    labFormat = labelFormat(big.mark = ''),
+    opacity = 1
+  ) %>% 
+  # set base map type
   addProviderTiles(providers$CartoDB.Positron) 
+
+# Icons 
+icons <- makeAwesomeIcon(
+  icon = "fire",
+  iconColor = "black",
+  library = "fa",
+  markerColor = "gray"
+)
+
+
+# Add Fire Name popup labels to each polygon centroid
+  map <- map %>%
+    #addMarkers(lng = fire_df$centroid_lon, 
+    addAwesomeMarkers(lng = fire_df$centroid_lon,
+               lat = fire_df$centroid_lat, 
+               icon=icons,
+               popup = fire_df$centroid_label)
+
+# display map
+map
+
 ```
 
 
