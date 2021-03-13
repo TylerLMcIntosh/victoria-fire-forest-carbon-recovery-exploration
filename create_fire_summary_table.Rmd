@@ -171,7 +171,7 @@ for (i in 1:nrow(fire_df)){
   # create popup label using fire name and year
   content <- paste(sep = "<br/>",
     fire_df$Fire_Name[i], fire_df$Year[i])
-  print(content)
+  #print(content)
   fire_df$centroid_label[i] <- content
   
   # get lon, lat coordinates of geometry centroid  
@@ -190,7 +190,7 @@ pal <- colorNumeric(
 map <- leaflet(fire_gjson) %>%
   addTiles() %>%
   addPolygons(stroke = FALSE, smoothFactor = 0.2, fillOpacity = 0.7,
-    color = ~pal(Year)
+    color = ~pal(Year), group = "MTBS fires"
   ) %>%
   addLegend("bottomright", pal = pal, values = ~Year,
     title = "Fire Year",
@@ -199,12 +199,13 @@ map <- leaflet(fire_gjson) %>%
     opacity = 1
   ) %>% 
   # set base map type
-  addProviderTiles(providers$CartoDB.Positron) 
+  addProviderTiles(providers$CartoDB.Positron, group = "Carto") %>%
+  addProviderTiles(providers$Stamen.Terrain, group = "Stamen")
 
 # Icons 
 icons <- makeAwesomeIcon(
   icon = "fire",
-  iconColor = "orange",
+  iconColor = "gray",
   library = "fa",
   markerColor = "gray"
 )
@@ -212,14 +213,14 @@ icons <- makeAwesomeIcon(
 
 # Add Fire Name popup labels to each polygon centroid
   map <- map %>%
-    #addMarkers(lng = fire_df$centroid_lon, 
+    #addMarkers(lng = fire_df$centroid_lon,
     addAwesomeMarkers(lng = fire_df$centroid_lon,
-               lat = fire_df$centroid_lat, 
+               lat = fire_df$centroid_lat,
                icon=icons,
-               popup = fire_df$centroid_label)
+               popup = fire_df$centroid_label) %>% 
+    addLayersControl(baseGroups = c("Carto", "Stamen"), 
+                   overlayGroups = c("MTBS fires"))  
 
-  # change icon width and height using makeIcon? 
-  # check out CircleMarkers? 
 
 # display map
 map
