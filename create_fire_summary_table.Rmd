@@ -69,7 +69,7 @@ fire_df <- sf::st_read(fire_filename)
 # adjust the data type and/or precision of some fields
 fire_df$id <- as.character(fire_df$id)     # Fire name 
 fire_df$Acres <- as.integer(fire_df$Acres) # Fire size [acres]
-fire_df$gedi_coverage <- round(as.numeric(as.character(fire_df$lodgepole)) * 100, digits = 1) # Percent GEDI pixels in fire perimeter
+fire_df$gedi_coverage <- round(as.numeric(as.character(fire_df$gedi_coverage)) * 100, digits = 1) # Percent GEDI pixels in fire perimeter
 fire_df$lodgepole <- round(as.numeric(as.character(fire_df$lodgepole)) * 100, digits = 1)     # Percent lodgepole 
 fire_df$ponderosa <- round(as.numeric(as.character(fire_df$ponderosa)) * 100, digits = 1)     # Percent ponderosa pine 
 fire_df$spruceFir <- round(as.numeric(as.character(fire_df$spruceFir)) * 100, digits = 1)     # Percent spruce/fir 
