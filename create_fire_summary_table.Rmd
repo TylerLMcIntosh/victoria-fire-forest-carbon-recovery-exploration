@@ -8,9 +8,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 Create a table summarizing data layers within each MTBS fire. 
-Layers were assembled and reduced in Google Earth Engine: 
-
-- 
+Layers were assembled and reduced in Google Earth Engine, then the summary file exported to Google Drive.
+Downloaded the summary table locally from Google Drive, then ran this script to visualize and explore the data.
 
 ```{r, message=FALSE, warning=FALSE, include=FALSE}
 # Install packages
@@ -47,7 +46,7 @@ library(ggrepel)
 #fire_filename <- here::here("data/fires_FIRED_local.geojson")
 
 # MTBS fires <200km from NIWO, with forest cover, addding in GEDI cover 
-fire_filename <- here::here("data/fires_stats_20210312.geojson")
+fire_filename <- here::here("data/fires_stats_20210414.geojson")
 
 
 
