@@ -1,0 +1,126 @@
+Get basic stats for seedling censuses & make figures
+
+Tyler L. McIntosh
+CU Boulder CIRES Earth Lab
+Last updated: 9/21/23
+
+This script uses the following naming conventions wherever possible:
+ lowerCamelCase for variables
+ period.separated for functions
+ underscore_separated for files
+
+```{r, echo = FALSE, warning = FALSE}
+# SETUP ----
+## Libraries ----
+
+#Check the required libraries and download if needed
+list.of.packages <- c("tidyverse", "terra", "sf", "mapview", "here", "landscapemetrics", "tictoc", "flextable")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+#Load
+library(tidyverse) #Tidyverse!
+library(terra) #New raster data package, documentation pdf here: https://cran.r-project.org/web/packages/terra/terra.pdf
+library(sf) #New vector data package
+library(mapview) #For quick interactive mapping
+library(here) #Relative path best practices
+library(landscapemetrics) #Fragstats for R
+library(tictoc) #time running of processes
+library(flextable)
+
+## Clean workspace & set up environment ----
+rm(list=ls()) #Ensure empty workspace if running from beginning
+here() #Check here location
+#OR
+#setwd() #Set working directory directly
+options(digits = 2) #Set standard decimal print output
+options(scipen = 999) #Turn scientific notation on and off (0 = on, 999 = off)
+```
+
+
+Create a table for UAS Specifications & flight parameters:
+
+```{r}
+
+
+`Parameter Type` <- c("UAS Specifications",
+                      "UAS Specifications",
+                      "UAS Specifications",
+                      "UAS Specifications",
+                      "UAS Specifications",
+                      "UAS Specifications",
+                      "UAS Flight Parameters",
+                      "UAS Flight Parameters",
+                      "UAS Flight Parameters",
+                      "UAS Flight Parameters",
+                      "UAS Flight Parameters",
+                      "UAS Flight Parameters",
+                      "UAS Flight Parameters")
+`UAS Flight Parameter`<- c("Vehicle",
+                            "Payload",
+                            "Sensor",
+                           "Lens",
+                           "ISO Range",
+                           "Shutter",
+                           "Flight planning software",
+                            "Altitude",
+                            "Along track overlap",
+                            "Across track overlap",
+                            "Flight speed",
+                            "Terrain follow use",
+                            "Flight pattern")
+`Parameter Details` <- c("DJI Phantom 4 Pro",
+                "Integrated off-the-shelf RGB camera",
+                "1 inch CMOS sensor, 20M effective pixels",
+                "FOV 84° 8.8 mm/24 mm (35 mm format equivalent) f/2.8 - f/11 auto focus at 1 m - ∞",
+                "100-3200 (Auto)",
+                "Electronic & Mechanical shutter",
+                "Map Pilot Pro",
+                "100m Above Ground Level (AGL)",
+                "85%",
+                "85%",
+                "6.0 m/s",
+                "Activated: Elevation profile USGS 30m SRTM",
+                "Grid mission")
+
+uas_table <- cbind(`Parameter Type`, `UAS Flight Parameter`, `Parameter Details`) %>% as.data.frame()
+
+ft_uas <- flextable::flextable(uas_table) %>%
+  flextable::set_table_properties(layout = "fixed") %>%
+  flextable::width(j = 1, width = 1, unit = "in") %>%
+  flextable::width(j = 2, width = 1.5, unit = "in") %>% 
+  flextable::width(j = 3, width = 3.5, unit = "in") %>% 
+  flextable::merge_at(i = 1:6, j = 1) %>%
+  flextable::merge_at(i = 7:13, j = 1) %>%
+  flextable::theme_vanilla() %>%
+  line_spacing(space = 1.5, part = "all")
+ft_uas
+
+save_as_image(ft_uas, path = here::here("figs", "UAS_params.jpeg"))
+
+```
+
+Create a figure showing the fires of interest and location of census plots:
+
+```{r}
+mtbs <- sf::st_read(here::here('data', 'derived', 'filtered', 'ponderosa_usfs_200.gpkg'))
+
+selectedFires <- mtbs %>% 
+  filter(event_name == 'HAYMAN' |
+           event_name == 'SCHOONOVER' |
+           event_name == 'BIG ELK' |
+           event_name == 'HIGH MEADOWS')
+
+plot(selectedFires$geom)
+
+
+```
+
+```{r}
+#Read data
+censusPolygons <- sf::st_read(here::here('data', 'career_census_23_polygons_7_5_23_FINAL.geojson'))
+
+mapview(censusPolygons)
+
+```
+
